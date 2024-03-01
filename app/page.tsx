@@ -5,12 +5,11 @@ import detectBrowser from "@/modules/detectBrowser";
 import {Button} from "@/components/ui/button";
 import {Alert, AlertTitle, AlertDescription} from "@/components/ui/alert";
 import {Badge} from "@/components/ui/badge";
-import {serialConnectionHealthCheck, readEPCFromRFIDReader, sendInventoryCommand} from "@/modules/webSerialAPI";
+import {serialConnectionHealthCheck, readEPCFromRFIDReader} from "@/modules/webSerialAPI";
 import LoadingOverlay from "@/components/LoadingOverlay";
 
 export default function Home() {
     const [browser, setBrowser] = useState<ReturnType<typeof detectBrowser> | undefined>(undefined);
-    const [isConnected, setIsConnected] = useState<boolean | undefined>(undefined);
     const [isReaded, setIsReaded] = useState<boolean>(false);
     const [readedEpc, setReadedEpc] = useState<string[] | null>(null);
     const [isReading, setIsReading] = useState<boolean>(false);
@@ -19,22 +18,11 @@ export default function Home() {
         setBrowser(detectBrowser(window.navigator.userAgent));
     }, []);
 
-
-    const handleCheckConnection = async () => {
-        const isSerialConnected = await serialConnectionHealthCheck();
-        if (isSerialConnected) {
-            setIsConnected(true);
-        } else {
-            setIsConnected(false);
-        }
-    }
-
     const handleReadEPC = async () => {
         setIsReading(true);
-        // const result = await readEPCFromRFIDReader();
-        const result = await sendInventoryCommand();
+        const result = await readEPCFromRFIDReader();
         setIsReaded(true)
-        setReadedEpc(result.epcs)
+        setReadedEpc(result.epc)
         setIsReading(false);
     }
 
@@ -54,7 +42,7 @@ export default function Home() {
                 <>
                     <Alert variant="destructive" className="w-[500px]">
                         <AlertTitle className="text-xl font-bold">Unsupported browser</AlertTitle>
-                        <AlertDescription>Please retry with "Google Chrome" or "Microsoft Edge" or "Opera".</AlertDescription>
+                        <AlertDescription>Please retry with &quot;Google Chrome&quot; or &quot;Microsoft Edge&quot; or &quot;Opera&quot;.</AlertDescription>
                     </Alert>
                 </>
             )}
@@ -72,9 +60,6 @@ export default function Home() {
                                 readedEpc.map((epc, index) => (
                                     <p key={index}>{epc.toUpperCase()}</p>
                                 ))
-                                // Array.from(readedEpc).map((epc, index) => (
-                                //     <p key={index}>{epc}</p>
-                                // ))
                             }</AlertDescription>
                         </Alert>
                     ) : (
@@ -85,10 +70,6 @@ export default function Home() {
                     )
                 )
             }
-
-
-
-
         </main>
     );
 }

@@ -55,13 +55,9 @@ const readEPCFromRFIDReader = async (): Promise<RFIDReadResult> => {
                 }
 
                 const textDecoder = new TextDecoder();
-                const text = textDecoder.decode(value);
-                // console.log(`Read data: ${text}`);
-                // epc = text;
-                //
                 // await waitSomeSecond(0.5); // 1秒待機(適宜調整
 
-                // データをHEX文字列として表示する例
+                // データをHEX文字列として表示する
                 const toHexString = (bytes: Uint8Array): string =>
                 bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
@@ -103,72 +99,69 @@ const readEPCFromRFIDReader = async (): Promise<RFIDReadResult> => {
     }
 };
 
-
-const calculateCRC16 = (bytes: Uint8Array): number => {
-    // CRC16の計算ロジックを実装
-    let crc = 0xFFFF; // 初期値
-    // @ts-ignore
-    for (let b of bytes) {
-        crc = crc ^ b; // ここにCRC16の実際の計算処理を実装
-    }
-    return crc;
-}
-const sendInventoryCommand = async (): Promise<{ epcs: any[]; error: any }> => {
-    if (!('serial' in navigator)) {
-        console.error("Web Serial API is not supported in this browser.");
-        return { epcs: [], error: "Web Serial API is not supported." };
-    }
-
-    try {
-        console.log("Start to send inventory command");
-        //@ts-ignore
-        const port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 });
-        console.log("port open", port)
-
-        const writer = port.writable.getWriter();
-        console.log("writer", writer)
-
-        // コマンドの組み立て
-        const commands = new Uint8Array([0x01]); // ここに適切なコマンドを設定
-        const cmdLength = new Uint8Array([commands.length + 2]); // コマンド長 + CRCの2バイト
-        const crc = calculateCRC16(commands);
-        const crcBytes = new Uint8Array([crc & 0xFF, crc >> 8]);
-        //@ts-ignore
-        const commandBytes = new Uint8Array([...cmdLength, ...commands, ...crcBytes]);
-        console.log("commandBytes", commandBytes)
-
-        // コマンドを送信
-        await writer.write(commandBytes);
-        writer.releaseLock();
-
-        // 応答を読み取る
-        const reader = port.readable.getReader();
-        console.log("reader", reader)
-        let epcs: Array<string> = [];
-        console.log("pre-epcs", epcs)
-        while (true) {
-            console.log("while loop")
-            const { value, done } = await reader.read();
-            if (done) {
-                break;
-            }
-            // ここで応答からEPCを解析するロジックを実装
-            // 例えば、valueを解析してEPCを抽出し、epcs配列に追加
-            epcs.push(value);
-            console.log("epcs", epcs[0])
-        }
-        reader.releaseLock();
-        await port.close();
-
-        // EPCのリストを返す
-        return { epcs, error: null };
-    } catch (error) {
-        console.error("Failed to send command:", error);
-        // @ts-ignore
-        return { epcs: [], error: error.message };
-    }
-}
+export { serialConnectionHealthCheck, readEPCFromRFIDReader };
 
 
-export { serialConnectionHealthCheck, readEPCFromRFIDReader, sendInventoryCommand };
+// const calculateCRC16 = (bytes: Uint8Array): number => {
+//     // CRC16の計算ロジックを実装
+//     let crc = 0xFFFF; // 初期値
+//     // @ts-ignore
+//     for (let b of bytes) {
+//         crc = crc ^ b; // CRC16の計算処理
+//     }
+//     return crc;
+// }
+// const sendInventoryCommand = async (): Promise<{ epcs: any[]; error: any }> => {
+//     if (!('serial' in navigator)) {
+//         console.error("Web Serial API is not supported in this browser.");
+//         return { epcs: [], error: "Web Serial API is not supported." };
+//     }
+//
+//     try {
+//         console.log("Start to send inventory command");
+//         //@ts-ignore
+//         const port = await navigator.serial.requestPort();
+//         await port.open({ baudRate: 9600 });
+//         console.log("port open", port)
+//
+//         const writer = port.writable.getWriter();
+//         console.log("writer", writer)
+//
+//         // コマンドの組み立て
+//         const commands = new Uint8Array([0x01]); // 0x01=Inventoryコマンド
+//         const cmdLength = new Uint8Array([commands.length + 2]); // コマンド長 + CRCの2バイト
+//         const crc = calculateCRC16(commands);
+//         const crcBytes = new Uint8Array([crc & 0xFF, crc >> 8]);
+//         //@ts-ignore
+//         const commandBytes = new Uint8Array([...cmdLength, ...commands, ...crcBytes]);
+//         console.log("commandBytes", commandBytes)
+//
+//         // コマンドを送信
+//         await writer.write(commandBytes);
+//         writer.releaseLock();
+//
+//         // 応答を読み取る
+//         const reader = port.readable.getReader();
+//         console.log("reader", reader)
+//         let epcs: Array<string> = [];
+//         console.log("pre-epcs", epcs)
+//         while (true) {
+//             console.log("while loop")
+//             const { value, done } = await reader.read();
+//             if (done) {
+//                 break;
+//             }
+//             epcs.push(value);
+//             console.log("epcs", epcs[0])
+//         }
+//         reader.releaseLock();
+//         await port.close();
+//
+//         // EPCのリストを返す
+//         return { epcs, error: null };
+//     } catch (error) {
+//         console.error("Failed to send command:", error);
+//         // @ts-ignore
+//         return { epcs: [], error: error.message };
+//     }
+// };
