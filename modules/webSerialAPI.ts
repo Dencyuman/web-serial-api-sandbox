@@ -17,13 +17,12 @@ const serialConnectionHealthCheck = async () => {
 
 const waitSomeSecond = (waitSecond: number) => new Promise(resolve => setTimeout(resolve, waitSecond * 1000));
 
-// TypeScriptの型チェックを活用
 interface RFIDReadResult {
     epc: string[] | null;
     error: string | null;
 }
 
-const readEPCFromRFIDReader = async (): Promise<RFIDReadResult> => {
+const readEPCFromRFIDReader = async (readingSeconds: number): Promise<RFIDReadResult> => {
     console.log("Start to Read EPC from RFID Reader")
     if (!('serial' in navigator)) {
         console.log('Web Serial API not supported.');
@@ -45,7 +44,9 @@ const readEPCFromRFIDReader = async (): Promise<RFIDReadResult> => {
 
         try {
             console.log("Try block")
-            while (Date.now() - startTime < 2000) {
+            console.log(readingSeconds)
+            while (Date.now() - startTime < readingSeconds*1000) {
+                await waitSomeSecond(1)
                 const { value, done } = await reader.read();
                 console.log(done)
 
@@ -55,7 +56,6 @@ const readEPCFromRFIDReader = async (): Promise<RFIDReadResult> => {
                 }
 
                 const textDecoder = new TextDecoder();
-                // await waitSomeSecond(0.5); // 1秒待機(適宜調整
 
                 // データをHEX文字列として表示する
                 const toHexString = (bytes: Uint8Array): string =>
@@ -88,9 +88,13 @@ const readEPCFromRFIDReader = async (): Promise<RFIDReadResult> => {
             console.error('Reading error:', readError);
             return { epc: null, error: `Reading error: ${readError}` };
         } finally {
-            console.log("Finally block")
-            reader?.releaseLock();
-            await port.close();
+            if (reader) {
+                await reader.releaseLock();
+            }
+            if (port) {
+                await port.close();
+            }
+            console.log("Serial port closed and resources released");
         }
         return { epc: null, error: 'EPC not found' };
     } catch (error) {

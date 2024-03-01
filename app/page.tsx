@@ -13,6 +13,7 @@ export default function Home() {
     const [isReaded, setIsReaded] = useState<boolean>(false);
     const [readedEpc, setReadedEpc] = useState<string[] | null>(null);
     const [isReading, setIsReading] = useState<boolean>(false);
+    const [readingSeconds, setReadingSeconds] = useState<number>(5);
 
     useEffect(() => {
         setBrowser(detectBrowser(window.navigator.userAgent));
@@ -20,7 +21,7 @@ export default function Home() {
 
     const handleReadEPC = async () => {
         setIsReading(true);
-        const result = await readEPCFromRFIDReader();
+        const result = await readEPCFromRFIDReader(readingSeconds);
         setIsReaded(true)
         setReadedEpc(result.epc)
         setIsReading(false);
